@@ -29,7 +29,6 @@ class PlaylistMaker:
                 "track": song
             }
         )
-
         if artist is not None:
             q["artist"] = artist
         if year is not None:
@@ -38,11 +37,8 @@ class PlaylistMaker:
             q["album"] = album
         if genre is not None:
             q["genre"] = genre
-
         query = urlencode(q)
-
         search_result = self.sp.search(q=query, type="track")
-
         try:
             song = search_result["tracks"]["items"][0]["uri"]
         except IndexError:
@@ -59,17 +55,12 @@ class PlaylistMaker:
 
     def get_songs(self, date):
         website = f"https://www.billboard.com/charts/hot-100/{date}/"
-
         response = requests.get(website).text
-
         soup = BeautifulSoup(response, "html.parser")
-
         titles = soup.find_all(name="h3", class_="a-no-trucate")
         songs = [song.getText().strip() for song in titles]
-
         artists = soup.find_all(name="span", class_="a-no-trucate")
         artists = [artist.getText().strip() for artist in artists]
-
         return songs, artists
 
     def get_song_ids(self, songs, artists):
@@ -81,11 +72,13 @@ class PlaylistMaker:
                 song_id.append(id)
         return song_id
 
-    def make_playlist(self, date):
+    def make_playlist(self, date, playlist_name=None, playlist_desc=None):
         songs, artists = self.get_songs(date)
         song_ids = self.get_song_ids(songs, artists)
-
-        playlist_id = self.create_playlist(f"{date} Top 100", f"The top songs of {date}")
-
+        if playlist_name is None:
+            playlist_name = f"{date}'s TOP 100"
+        if playlist_desc is None:
+            playlist_name = f"The top songs of {date}"
+        playlist_id = self.create_playlist(playlist_name, f"The top songs of {date}")
         response = self.add_songs(playlist_id=playlist_id, song_id=song_ids)
         return response
